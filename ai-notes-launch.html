@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记得 - AI 笔记工具产品发布会</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+    <style>
+        /* === THEME === */
+        :root {
+            --stage-bg: #050707;
+            --slide-bg: #07100f;
+            --ink: #f4efe4;
+            --muted: #a5b5ad;
+            --dim: #62716b;
+            --line: rgba(244, 239, 228, 0.16);
+            --panel: rgba(244, 239, 228, 0.07);
+            --panel-strong: rgba(244, 239, 228, 0.12);
+            --mint: #3ef2bd;
+            --mint-soft: rgba(62, 242, 189, 0.2);
+            --sun: #ffd76a;
+            --coral: #ff775f;
+            --blue: #77b8ff;
+            --font-display: 'Noto Serif SC';
+            --font-body: 'Noto Sans SC';
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* === RESET === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ===========================================
+           FIXED 16:9 STAGE: MANDATORY BASE STYLES
+           Include this ENTIRE file in every presentation.
+           Slides are authored at 1920×1080 and scaled as a whole.
+           =========================================== */
+
+        /* 1. Lock the browser viewport */
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        /* 2. Full-window deck viewport */
+        .deck-viewport {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        .particle-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.62;
+            pointer-events: none;
+        }
+
+        /* 3. Fixed 16:9 design canvas.
+           JavaScript sets transform: translate(...) scale(...). */
+        .deck-stage {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+            background: var(--slide-bg, #fff);
+        }
+
+        /* 4. Slides stack inside the fixed stage.
+           Content must be laid out at 1920×1080, not reflowed per device. */
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: var(--slide-bg, #fff);
+        }
+
+        .slide.active,
+        .slide.visible {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+            animation: slidePulseIn 820ms var(--ease-out-expo) both;
+        }
+
+        /* 5. Keep media inside authored slide bounds */
+        img,
+        video,
+        canvas,
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 6. Presentation chrome stays outside the slide design system */
+        .deck-controls {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* 7. Print one fixed-size slide per page */
+        @media print {
+            html,
+            body {
+                width: 1920px;
+                height: auto;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-viewport {
+                position: static;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-stage {
+                position: static;
+                width: auto;
+                height: auto;
+                transform: none !important;
+                background: none;
+            }
+
+            .slide {
+                position: relative;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                width: 1920px;
+                height: 1080px;
+                break-after: page;
+                page-break-after: always;
+            }
+
+            .slide:last-child {
+                break-after: auto;
+                page-break-after: auto;
+            }
+
+            .deck-controls {
+                display: none !important;
+            }
+        }
+
+        /* 8. Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* === GLOBAL SLIDE SYSTEM === */
+        body {
+            color: var(--ink);
+            font-family: var(--font-body), sans-serif;
+        }
+
+        .slide {
+            padding: 78px 92px;
+            color: var(--ink);
+        }
+
+        .slide::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, rgba(244, 239, 228, 0.035) 1px, transparent 1px),
+                linear-gradient(rgba(244, 239, 228, 0.035) 1px, transparent 1px);
+            background-size: 80px 80px;
+            mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 74%);
+            pointer-events: none;
+        }
+
+        .slide::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 72% 24%, rgba(62, 242, 189, 0.16), transparent 34%),
+                radial-gradient(circle at 18% 82%, rgba(255, 215, 106, 0.10), transparent 34%),
+                radial-gradient(circle at 92% 86%, rgba(119, 184, 255, 0.10), transparent 30%);
+            pointer-events: none;
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+        }
+
+        .eyebrow {
+            color: var(--mint);
+            font-size: 25px;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-display), serif;
+            font-weight: 900;
+            letter-spacing: 0;
+            line-height: 1.04;
+        }
+
+        h1 {
+            width: 1320px;
+            font-size: 128px;
+        }
+
+        h2 {
+            width: 1180px;
+            font-size: 82px;
+        }
+
+        h3 {
+            font-size: 42px;
+        }
+
+        p {
+            color: var(--muted);
+            font-size: 31px;
+            line-height: 1.52;
+        }
+
+        .kicker {
+            width: 780px;
+            margin-top: 34px;
+            font-size: 34px;
+        }
+
+        .page-number {
+            position: absolute;
+            right: 92px;
+            bottom: 68px;
+            z-index: 3;
+            color: var(--dim);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .brand-mark {
+            position: absolute;
+            left: 92px;
+            bottom: 66px;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--muted);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .brand-mark::before {
+            content: "";
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--mint);
+            border-radius: 50% 50% 50% 8px;
+            box-shadow: 0 0 28px var(--mint-soft);
+        }
+
+        /* === ANIMATION SYSTEM === */
+        @keyframes slidePulseIn {
+            0% {
+                opacity: 0;
+                filter: blur(14px) saturate(1.5);
+                transform: scale(1.018);
+            }
+            100% {
+                opacity: 1;
+                filter: blur(0) saturate(1);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes scanSheen {
+            0% { transform: translateX(-130%) skewX(-18deg); opacity: 0; }
+            18% { opacity: 0.72; }
+            48% { opacity: 0.34; }
+            100% { transform: translateX(150%) skewX(-18deg); opacity: 0; }
+        }
+
+        @keyframes orbitalSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.55); filter: brightness(1.8); }
+        }
+
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+        }
+
+        @keyframes metricGlow {
+            0%, 100% { text-shadow: 0 0 18px rgba(62, 242, 189, 0.22); }
+            50% { text-shadow: 0 0 46px rgba(62, 242, 189, 0.74), 0 0 90px rgba(62, 242, 189, 0.3); }
+        }
+
+        .reveal,
+        .reveal-left,
+        .reveal-scale,
+        .reveal-blur {
+            opacity: 0;
+            transition:
+                opacity 760ms var(--ease-out-expo),
+                transform 760ms var(--ease-out-expo),
+                filter 900ms var(--ease-out-expo);
+        }
+
+        .reveal {
+            transform: translateY(34px);
+        }
+
+        .reveal-left {
+            transform: translateX(-46px);
+        }
+
+        .reveal-scale {
+            transform: scale(0.94);
+        }
+
+        .reveal-blur {
+            filter: blur(12px);
+            transform: translateY(18px);
+        }
+
+        .visible .reveal,
+        .visible .reveal-left,
+        .visible .reveal-scale,
+        .visible .reveal-blur {
+            opacity: 1;
+            filter: blur(0);
+            transform: translate(0, 0) scale(1);
+        }
+
+        .visible h1,
+        .visible h2 {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visible h1::after,
+        .visible h2::after {
+            content: "";
+            position: absolute;
+            top: -12%;
+            bottom: -12%;
+            left: 0;
+            width: 34%;
+            background: linear-gradient(90deg, transparent, rgba(62, 242, 189, 0.20), rgba(255, 215, 106, 0.16), transparent);
+            animation: scanSheen 2.4s 420ms var(--ease-out-expo) both;
+            pointer-events: none;
+        }
+
+        .delay-1 { transition-delay: 120ms; }
+        .delay-2 { transition-delay: 240ms; }
+        .delay-3 { transition-delay: 360ms; }
+        .delay-4 { transition-delay: 480ms; }
+
+        /* === VISUAL COMPONENTS === */
+        .orbital {
+            position: absolute;
+            right: 96px;
+            top: 145px;
+            width: 620px;
+            height: 620px;
+            border: 2px solid var(--line);
+            border-radius: 50%;
+            z-index: 1;
+            animation: orbitalSpin 26s linear infinite;
+        }
+
+        .orbital::before,
+        .orbital::after {
+            content: "";
+            position: absolute;
+            border: 2px solid var(--line);
+            border-radius: 50%;
+        }
+
+        .orbital::before {
+            inset: 90px;
+        }
+
+        .orbital::after {
+            inset: 205px;
+            background: radial-gradient(circle, rgba(62, 242, 189, 0.25), transparent 58%);
+            box-shadow: 0 0 80px rgba(62, 242, 189, 0.18);
+        }
+
+        .node {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 26px rgba(62, 242, 189, 0.8);
+            animation: nodePulse 2.2s ease-in-out infinite;
+        }
+
+        .node.n1 { left: 62px; top: 154px; }
+        .node.n2 { right: 96px; top: 86px; background: var(--sun); box-shadow: 0 0 26px rgba(255, 215, 106, 0.7); }
+        .node.n3 { right: 128px; bottom: 128px; background: var(--blue); box-shadow: 0 0 26px rgba(119, 184, 255, 0.7); }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 720px 1fr;
+            gap: 96px;
+            align-items: center;
+            height: 100%;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            margin-top: 58px;
+        }
+
+        .card {
+            min-height: 300px;
+            padding: 36px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            border-radius: 28px;
+            backdrop-filter: blur(8px);
+        }
+
+        .visible .card:nth-child(1) { animation: cardFloat 5.8s ease-in-out 900ms infinite; }
+        .visible .card:nth-child(2) { animation: cardFloat 6.2s ease-in-out 1200ms infinite; }
+        .visible .card:nth-child(3) { animation: cardFloat 5.5s ease-in-out 1500ms infinite; }
+
+        .card .num {
+            color: var(--mint);
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .card p {
+            margin-top: 22px;
+            font-size: 25px;
+            line-height: 1.45;
+        }
+
+        .quote {
+            width: 1260px;
+            font-family: var(--font-display), serif;
+            font-size: 82px;
+            font-weight: 900;
+            line-height: 1.12;
+        }
+
+        .quote span {
+            color: var(--mint);
+        }
+
+        .workflow {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 78px;
+        }
+
+        .step {
+            position: relative;
+            height: 430px;
+            padding: 34px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, var(--panel-strong), rgba(244, 239, 228, 0.035));
+            border-radius: 26px;
+        }
+
+        .step::after {
+            content: "";
+            position: absolute;
+            right: -28px;
+            top: 50%;
+            width: 32px;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .step .label {
+            color: var(--sun);
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .step h3 {
+            margin-top: 34px;
+        }
+
+        .step p {
+            margin-top: 24px;
+            font-size: 25px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 70px;
+        }
+
+        .metric {
+            height: 310px;
+            padding: 42px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            border-radius: 26px;
+        }
+
+        .metric strong {
+            display: block;
+            color: var(--mint);
+            font-family: var(--font-display), serif;
+            font-size: 86px;
+            line-height: 1;
+            animation: metricGlow 2.6s ease-in-out infinite;
+        }
+
+        .metric span {
+            display: block;
+            margin-top: 26px;
+            color: var(--muted);
+            font-size: 27px;
+            line-height: 1.38;
+        }
+
+        .device {
+            position: relative;
+            width: 680px;
+            height: 650px;
+            margin-left: auto;
+            border: 2px solid rgba(244, 239, 228, 0.24);
+            border-radius: 44px;
+            background: linear-gradient(145deg, rgba(244, 239, 228, 0.12), rgba(244, 239, 228, 0.035));
+            box-shadow: inset 0 0 0 10px rgba(0, 0, 0, 0.28), 0 40px 120px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .device::before {
+            content: "";
+            position: absolute;
+            left: 42px;
+            top: 44px;
+            width: 160px;
+            height: 20px;
+            border-radius: 20px;
+            background: rgba(244, 239, 228, 0.16);
+        }
+
+        .device-line {
+            position: absolute;
+            left: 54px;
+            right: 54px;
+            height: 24px;
+            border-radius: 24px;
+            background: rgba(244, 239, 228, 0.12);
+        }
+
+        .device-line.l1 { top: 132px; width: 72%; }
+        .device-line.l2 { top: 190px; width: 50%; }
+        .device-line.l3 { top: 326px; width: 78%; background: rgba(62, 242, 189, 0.22); }
+        .device-line.l4 { top: 386px; width: 62%; }
+
+        .chip-row {
+            position: absolute;
+            left: 54px;
+            right: 54px;
+            bottom: 72px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .chip {
+            padding: 16px 20px;
+            color: var(--ink);
+            border: 1px solid rgba(62, 242, 189, 0.35);
+            border-radius: 999px;
+            background: rgba(62, 242, 189, 0.10);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .timeline {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 42px;
+            margin-top: 110px;
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 36px;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .milestone {
+            position: relative;
+            padding-top: 82px;
+        }
+
+        .milestone::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 22px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 26px rgba(62, 242, 189, 0.7);
+        }
+
+        .milestone h3 {
+            color: var(--ink);
+        }
+
+        .milestone p {
+            margin-top: 20px;
+            font-size: 25px;
+        }
+
+        /* === SPECIFIC SLIDES === */
+        .title-slide h1 {
+            margin-top: 220px;
+        }
+
+        .title-slide .kicker {
+            color: var(--ink);
+        }
+
+        .big-statement {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .big-statement h2 {
+            width: 1450px;
+            font-size: 100px;
+        }
+
+        .big-statement h2 em {
+            color: var(--mint);
+            font-style: normal;
+        }
+
+        .closing {
+            display: grid;
+            place-items: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .closing h2 {
+            width: 1280px;
+            margin: 0 auto;
+            font-size: 112px;
+        }
+
+        .closing p {
+            width: 760px;
+            margin: 36px auto 0;
+            color: var(--ink);
+        }
+
+        /* === DECK CONTROLS === */
+        .deck-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            color: rgba(244, 239, 228, 0.82);
+            border: 1px solid rgba(244, 239, 228, 0.16);
+            border-radius: 999px;
+            background: rgba(7, 16, 15, 0.78);
+            backdrop-filter: blur(14px);
+            font-family: var(--font-body), sans-serif;
+            font-size: 15px;
+            opacity: 0.28;
+            transition: opacity 180ms ease;
+        }
+
+        .deck-controls:hover {
+            opacity: 1;
+        }
+
+        .deck-controls button,
+        .edit-toggle,
+        .export-button {
+            border: 0;
+            color: var(--ink);
+            background: rgba(244, 239, 228, 0.10);
+            border-radius: 999px;
+            font-family: var(--font-body), sans-serif;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .deck-controls button {
+            width: 34px;
+            height: 34px;
+        }
+
+        .progress {
+            width: 180px;
+            height: 4px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(244, 239, 228, 0.14);
+        }
+
+        .progress-bar {
+            width: 10%;
+            height: 100%;
+            border-radius: 999px;
+            background: var(--mint);
+            transition: width 260ms var(--ease-out-expo);
+        }
+
+        /* === INLINE EDITING === */
+        .edit-hotzone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 84px;
+            height: 84px;
+            z-index: 10000;
+            cursor: pointer;
+        }
+
+        .edit-toggle,
+        .export-button {
+            position: fixed;
+            left: 18px;
+            z-index: 10001;
+            width: 48px;
+            height: 48px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 220ms ease, transform 220ms ease;
+        }
+
+        .edit-toggle {
+            top: 18px;
+        }
+
+        .export-button {
+            top: 74px;
+        }
+
+        .edit-toggle.show,
+        .edit-toggle.active,
+        .export-button.show,
+        .export-button.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .editing [data-editable="true"] {
+            outline: 2px dashed rgba(62, 242, 189, 0.75);
+            outline-offset: 8px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <canvas class="particle-canvas" id="particleCanvas" aria-hidden="true"></canvas>
+    <div class="deck-viewport">
+        <main class="deck-stage" id="deckStage">
+            <section class="slide title-slide active">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">AI Notes Launch</div>
+                    <h1 class="reveal delay-1" data-editable="true">记得</h1>
+                    <p class="kicker reveal delay-2" data-editable="true">一个把会议、灵感和任务自动整理成行动的 AI 笔记工具</p>
+                    <div class="orbital reveal-scale delay-3">
+                        <span class="node n1"></span>
+                        <span class="node n2"></span>
+                        <span class="node n3"></span>
+                    </div>
+                    <div class="brand-mark">JIDE AI Notes</div>
+                    <div class="page-number">01 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content big-statement">
+                    <h2 class="reveal-blur" data-editable="true">不是我们不会记笔记，是信息从来没有真正为人类<em>排过队</em>。</h2>
+                    <div class="brand-mark">The Problem</div>
+                    <div class="page-number">02 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">Current Reality</div>
+                    <h2 class="reveal delay-1" data-editable="true">今天的笔记，常常停在“记录”这一步。</h2>
+                    <div class="cards">
+                        <article class="card reveal delay-2">
+                            <div class="num">01</div>
+                            <h3 data-editable="true">会后找不到重点</h3>
+                            <p data-editable="true">一小时会议变成几千字文本，真正的结论埋在里面。</p>
+                        </article>
+                        <article class="card reveal delay-3">
+                            <div class="num">02</div>
+                            <h3 data-editable="true">行动项无人跟进</h3>
+                            <p data-editable="true">任务说过了，但没有被分派、提醒、推进。</p>
+                        </article>
+                        <article class="card reveal delay-4">
+                            <div class="num">03</div>
+                            <h3 data-editable="true">知识越存越散</h3>
+                            <p data-editable="true">灵感、会议、文档分散在不同工具里，无法形成上下文。</p>
+                        </article>
+                    </div>
+                    <div class="brand-mark">JIDE AI Notes</div>
+                    <div class="page-number">03 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content two-col">
+                    <div>
+                        <div class="eyebrow reveal">Product Vision</div>
+                        <h2 class="reveal delay-1" data-editable="true">让每条信息，都自动变成下一步。</h2>
+                        <p class="kicker reveal delay-2" data-editable="true">记得不是录音转文字工具，而是你的第二大脑操作台：听懂、整理、关联、推动。</p>
+                    </div>
+                    <div class="device reveal-scale delay-3">
+                        <span class="device-line l1"></span>
+                        <span class="device-line l2"></span>
+                        <span class="device-line l3"></span>
+                        <span class="device-line l4"></span>
+                        <div class="chip-row">
+                            <span class="chip">会议摘要</span>
+                            <span class="chip">行动项</span>
+                            <span class="chip">决策记录</span>
+                            <span class="chip">知识链接</span>
+                            <span class="chip">自动提醒</span>
+                        </div>
+                    </div>
+                    <div class="brand-mark">The Vision</div>
+                    <div class="page-number">04 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">How It Works</div>
+                    <h2 class="reveal delay-1" data-editable="true">从声音到行动，只要四步。</h2>
+                    <div class="workflow">
+                        <article class="step reveal delay-1">
+                            <div class="label">01 Capture</div>
+                            <h3 data-editable="true">自动记录</h3>
+                            <p data-editable="true">会议、语音、网页、零散想法，一键进入同一个收件箱。</p>
+                        </article>
+                        <article class="step reveal delay-2">
+                            <div class="label">02 Understand</div>
+                            <h3 data-editable="true">理解上下文</h3>
+                            <p data-editable="true">识别主题、人物、决策、风险，不只做逐字稿。</p>
+                        </article>
+                        <article class="step reveal delay-3">
+                            <div class="label">03 Structure</div>
+                            <h3 data-editable="true">结构化笔记</h3>
+                            <p data-editable="true">自动生成摘要、待办、标签、关联文档。</p>
+                        </article>
+                        <article class="step reveal delay-4">
+                            <div class="label">04 Act</div>
+                            <h3 data-editable="true">推动执行</h3>
+                            <p data-editable="true">把任务同步到日历、IM、项目工具，持续提醒。</p>
+                        </article>
+                    </div>
+                    <div class="brand-mark">JIDE AI Notes</div>
+                    <div class="page-number">05 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">Core Features</div>
+                    <h2 class="reveal delay-1" data-editable="true">发布首日，我们先解决三个高频痛点。</h2>
+                    <div class="cards">
+                        <article class="card reveal delay-2">
+                            <div class="num">Smart Recap</div>
+                            <h3 data-editable="true">会后 30 秒摘要</h3>
+                            <p data-editable="true">按议题、结论、争议点输出，不需要从头读逐字稿。</p>
+                        </article>
+                        <article class="card reveal delay-3">
+                            <div class="num">Action Graph</div>
+                            <h3 data-editable="true">行动项图谱</h3>
+                            <p data-editable="true">自动识别负责人、截止时间、依赖关系，形成可追踪任务。</p>
+                        </article>
+                        <article class="card reveal delay-4">
+                            <div class="num">Memory Link</div>
+                            <h3 data-editable="true">长期记忆链接</h3>
+                            <p data-editable="true">把本次讨论和历史会议、文档、客户反馈自动连起来。</p>
+                        </article>
+                    </div>
+                    <div class="brand-mark">Product</div>
+                    <div class="page-number">06 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content big-statement">
+                    <h2 class="reveal-blur" data-editable="true">AI 的价值，不是帮你多存一点信息，而是帮你少丢一次关键判断。</h2>
+                    <div class="brand-mark">Positioning</div>
+                    <div class="page-number">07 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">Early Signal</div>
+                    <h2 class="reveal delay-1" data-editable="true">我们想让团队每周少花时间“回忆发生了什么”。</h2>
+                    <div class="metric-grid">
+                        <div class="metric reveal delay-2">
+                            <strong data-editable="true">70%</strong>
+                            <span data-editable="true">减少会后整理时间，把人工复盘压缩到检查与确认。</span>
+                        </div>
+                        <div class="metric reveal delay-3">
+                            <strong data-editable="true">4 X</strong>
+                            <span data-editable="true">提升行动项被记录和分派的完整度。</span>
+                        </div>
+                        <div class="metric reveal delay-4">
+                            <strong data-editable="true">1处</strong>
+                            <span data-editable="true">把会议、灵感、任务和历史资料放进同一个上下文。</span>
+                        </div>
+                    </div>
+                    <div class="brand-mark">Impact</div>
+                    <div class="page-number">08 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="eyebrow reveal">Launch Roadmap</div>
+                    <h2 class="reveal delay-1" data-editable="true">从个人效率，到团队记忆网络。</h2>
+                    <div class="timeline">
+                        <article class="milestone reveal delay-1">
+                            <h3 data-editable="true">Beta</h3>
+                            <p data-editable="true">个人会议记录、摘要、行动项提取。</p>
+                        </article>
+                        <article class="milestone reveal delay-2">
+                            <h3 data-editable="true">Team</h3>
+                            <p data-editable="true">共享工作区、任务同步、权限管理。</p>
+                        </article>
+                        <article class="milestone reveal delay-3">
+                            <h3 data-editable="true">Memory</h3>
+                            <p data-editable="true">跨会议检索、客户上下文、项目历史追踪。</p>
+                        </article>
+                        <article class="milestone reveal delay-4">
+                            <h3 data-editable="true">Agent</h3>
+                            <p data-editable="true">主动提醒风险、生成周报、推动后续协作。</p>
+                        </article>
+                    </div>
+                    <div class="brand-mark">Roadmap</div>
+                    <div class="page-number">09 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content closing">
+                    <div>
+                        <div class="eyebrow reveal">Now Available</div>
+                        <h2 class="reveal delay-1" data-editable="true">让团队从“记下来”，进入“做下去”。</h2>
+                        <p class="reveal delay-2" data-editable="true">记得 AI Notes，今天开放内测申请。</p>
+                    </div>
+                    <div class="brand-mark">JIDE AI Notes</div>
+                    <div class="page-number">10 / 10</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="deck-controls" aria-label="Presentation controls">
+        <button id="prevBtn" title="上一页">‹</button>
+        <span id="slideCounter">1 / 10</span>
+        <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+        <button id="nextBtn" title="下一页">›</button>
+    </div>
+
+    <div class="edit-hotzone" title="编辑模式"></div>
+    <button class="edit-toggle" id="editToggle" title="编辑模式 E">E</button>
+    <button class="export-button" id="exportButton" title="导出当前 HTML">↓</button>
+
+    <script>
+        /* === SLIDE PRESENTATION CONTROLLER === */
+        class SlidePresentation {
+            constructor() {
+                this.slides = Array.from(document.querySelectorAll('.slide'));
+                this.currentSlide = 0;
+                this.stage = document.getElementById('deckStage');
+                this.counter = document.getElementById('slideCounter');
+                this.progressBar = document.getElementById('progressBar');
+                this.wheelLocked = false;
+                this.setupStageScale();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupMouseWheel();
+                this.setupButtons();
+                this.showSlide(0);
+            }
+
+            setupStageScale() {
+                const scale = () => {
+                    const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    const x = (window.innerWidth - 1920 * factor) / 2;
+                    const y = (window.innerHeight - 1080 * factor) / 2;
+                    this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+                };
+                scale();
+                window.addEventListener('resize', scale);
+            }
+
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (event) => {
+                    if (event.target.getAttribute('contenteditable') === 'true') return;
+                    if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
+                        event.preventDefault();
+                        this.next();
+                    }
+                    if (['ArrowLeft', 'PageUp'].includes(event.key)) {
+                        event.preventDefault();
+                        this.prev();
+                    }
+                    if (event.key === 'Home') this.showSlide(0);
+                    if (event.key === 'End') this.showSlide(this.slides.length - 1);
+                });
+            }
+
+            setupTouchNav() {
+                let startX = 0;
+                let startY = 0;
+                window.addEventListener('touchstart', (event) => {
+                    startX = event.changedTouches[0].clientX;
+                    startY = event.changedTouches[0].clientY;
+                }, { passive: true });
+                window.addEventListener('touchend', (event) => {
+                    const dx = event.changedTouches[0].clientX - startX;
+                    const dy = event.changedTouches[0].clientY - startY;
+                    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
+                        dx < 0 ? this.next() : this.prev();
+                    }
+                }, { passive: true });
+            }
+
+            setupMouseWheel() {
+                window.addEventListener('wheel', (event) => {
+                    if (this.wheelLocked || Math.abs(event.deltaY) < 24) return;
+                    this.wheelLocked = true;
+                    event.deltaY > 0 ? this.next() : this.prev();
+                    setTimeout(() => { this.wheelLocked = false; }, 520);
+                }, { passive: true });
+            }
+
+            setupButtons() {
+                document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+                document.getElementById('nextBtn').addEventListener('click', () => this.next());
+            }
+
+            showSlide(index) {
+                this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+                this.slides.forEach((slide, slideIndex) => {
+                    const active = slideIndex === this.currentSlide;
+                    slide.classList.toggle('active', active);
+                    slide.classList.toggle('visible', active);
+                });
+                this.counter.textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+                this.progressBar.style.width = `${((this.currentSlide + 1) / this.slides.length) * 100}%`;
+            }
+
+            next() {
+                this.showSlide(this.currentSlide + 1);
+            }
+
+            prev() {
+                this.showSlide(this.currentSlide - 1);
+            }
+        }
+
+        /* === INLINE EDITOR === */
+        class InlineEditor {
+            constructor() {
+                this.isActive = false;
+                this.storageKey = `frontend-slides:${document.title}:editable-content`;
+                this.editables = Array.from(document.querySelectorAll('[data-editable="true"]'));
+                this.restore();
+                this.setupAutosave();
+                this.setupExport();
+            }
+
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+                document.body.classList.toggle('editing', this.isActive);
+                document.getElementById('editToggle').classList.toggle('active', this.isActive);
+                document.getElementById('exportButton').classList.toggle('active', this.isActive);
+                this.editables.forEach((node) => {
+                    node.setAttribute('contenteditable', this.isActive ? 'true' : 'false');
+                });
+            }
+
+            setupAutosave() {
+                this.editables.forEach((node, index) => {
+                    node.dataset.editIndex = index;
+                    node.addEventListener('input', () => this.save());
+                });
+            }
+
+            save() {
+                const payload = this.editables.map((node) => node.innerHTML);
+                localStorage.setItem(this.storageKey, JSON.stringify(payload));
+            }
+
+            restore() {
+                const saved = localStorage.getItem(this.storageKey);
+                if (!saved) return;
+                try {
+                    JSON.parse(saved).forEach((html, index) => {
+                        if (this.editables[index]) this.editables[index].innerHTML = html;
+                    });
+                } catch (error) {
+                    console.warn('Unable to restore saved edits', error);
+                }
+            }
+
+            setupExport() {
+                document.getElementById('exportButton').addEventListener('click', () => {
+                    this.save();
+                    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'ai-notes-launch-edited.html';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+        }
+
+        /* === BOOTSTRAP === */
+        const deck = new SlidePresentation();
+        const editor = new InlineEditor();
+
+        /* === LIVE PARTICLE FIELD === */
+        class ParticleField {
+            constructor() {
+                this.canvas = document.getElementById('particleCanvas');
+                this.context = this.canvas.getContext('2d');
+                this.particles = [];
+                this.motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                this.resize();
+                this.createParticles();
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.createParticles();
+                });
+                if (this.motionOK) this.frame();
+            }
+
+            resize() {
+                this.width = this.canvas.width = Math.floor(window.innerWidth * window.devicePixelRatio);
+                this.height = this.canvas.height = Math.floor(window.innerHeight * window.devicePixelRatio);
+            }
+
+            createParticles() {
+                const count = Math.min(110, Math.max(42, Math.floor((window.innerWidth * window.innerHeight) / 15000)));
+                this.particles = Array.from({ length: count }, () => ({
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height,
+                    vx: (Math.random() - 0.5) * 0.55 * window.devicePixelRatio,
+                    vy: (Math.random() - 0.5) * 0.55 * window.devicePixelRatio,
+                    r: (Math.random() * 1.8 + 0.7) * window.devicePixelRatio,
+                    hue: Math.random() > 0.72 ? '255, 215, 106' : '62, 242, 189'
+                }));
+            }
+
+            frame() {
+                const ctx = this.context;
+                ctx.clearRect(0, 0, this.width, this.height);
+                ctx.globalCompositeOperation = 'lighter';
+                for (const particle of this.particles) {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    if (particle.x < 0 || particle.x > this.width) particle.vx *= -1;
+                    if (particle.y < 0 || particle.y > this.height) particle.vy *= -1;
+
+                    const glow = ctx.createRadialGradient(particle.x, particle.y, 0, particle.x, particle.y, particle.r * 9);
+                    glow.addColorStop(0, `rgba(${particle.hue}, 0.45)`);
+                    glow.addColorStop(1, `rgba(${particle.hue}, 0)`);
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.r * 9, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(() => this.frame());
+            }
+        }
+
+        new ParticleField();
+
+        /* === EDIT BUTTON VISIBILITY === */
+        const hotzone = document.querySelector('.edit-hotzone');
+        const editToggle = document.getElementById('editToggle');
+        const exportButton = document.getElementById('exportButton');
+        let hideTimeout = null;
+
+        function showEditButtons() {
+            clearTimeout(hideTimeout);
+            editToggle.classList.add('show');
+            exportButton.classList.add('show');
+        }
+
+        function scheduleHideButtons() {
+            hideTimeout = setTimeout(() => {
+                if (!editor.isActive) {
+                    editToggle.classList.remove('show');
+                    exportButton.classList.remove('show');
+                }
+            }, 400);
+        }
+
+        hotzone.addEventListener('mouseenter', showEditButtons);
+        hotzone.addEventListener('mouseleave', scheduleHideButtons);
+        hotzone.addEventListener('click', () => editor.toggleEditMode());
+        editToggle.addEventListener('mouseenter', showEditButtons);
+        editToggle.addEventListener('mouseleave', scheduleHideButtons);
+        exportButton.addEventListener('mouseenter', showEditButtons);
+        exportButton.addEventListener('mouseleave', scheduleHideButtons);
+        editToggle.addEventListener('click', () => editor.toggleEditMode());
+
+        document.addEventListener('keydown', (event) => {
+            if ((event.key === 'e' || event.key === 'E') && event.target.getAttribute('contenteditable') !== 'true') {
+                editor.toggleEditMode();
+                showEditButtons();
+            }
+        });
+    </script>
+</body>
+</html>

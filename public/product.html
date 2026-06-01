@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Studio Portfolio Case</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #171816;
+            --muted: #6c716d;
+            --line: #dedfd9;
+            --paper: #f7f7f2;
+            --surface: #ffffff;
+            --accent: #2f8c73;
+            --blue: #2c6f9f;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--paper);
+            font-family: Inter, sans-serif;
+        }
+
+        a { color: inherit; }
+
+        .hero {
+            position: relative;
+            min-height: 92vh;
+            overflow: hidden;
+            color: #fff;
+            background: #111;
+        }
+
+        .hero iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            opacity: 0.72;
+            filter: saturate(0.95);
+        }
+
+        .hero::after {
+            position: absolute;
+            inset: 0;
+            content: "";
+            background: linear-gradient(90deg, rgba(10, 12, 11, 0.88), rgba(10, 12, 11, 0.28) 58%, rgba(10, 12, 11, 0.72));
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            align-content: center;
+            width: min(1180px, calc(100vw - 40px));
+            min-height: 86vh;
+            margin: 0 auto;
+            padding: 56px 0 86px;
+        }
+
+        .kicker {
+            margin: 0 0 14px;
+            color: #b7e6d9;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            max-width: 820px;
+            margin: 0;
+            font-size: clamp(44px, 7vw, 84px);
+            line-height: 0.96;
+            letter-spacing: 0;
+        }
+
+        .hero p {
+            max-width: 640px;
+            margin: 22px 0 0;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 19px;
+            line-height: 1.55;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .hero-actions a {
+            display: inline-flex;
+            align-items: center;
+            height: 44px;
+            padding: 0 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            font-weight: 800;
+            backdrop-filter: blur(14px);
+        }
+
+        .hero-actions a.primary {
+            color: #11231e;
+            background: #b7e6d9;
+            border-color: transparent;
+        }
+
+        main {
+            display: grid;
+            gap: 0;
+        }
+
+        .band {
+            border-top: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .band.alt {
+            background: var(--paper);
+        }
+
+        .inner {
+            width: min(1180px, calc(100vw - 40px));
+            margin: 0 auto;
+            padding: 64px 0;
+        }
+
+        .section-head {
+            display: grid;
+            gap: 10px;
+            max-width: 760px;
+            margin-bottom: 30px;
+        }
+
+        .section-head h2 {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 0;
+        }
+
+        .section-head p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .metrics,
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .item {
+            display: grid;
+            gap: 10px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .item strong {
+            font-size: 18px;
+        }
+
+        .item span,
+        .item p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .step {
+            padding: 18px;
+            border-left: 4px solid var(--accent);
+            background: #fff;
+        }
+
+        .step b {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .step span {
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        @media (max-width: 860px) {
+            .metrics,
+            .features,
+            .flow {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <iframe src="/ai-creation-sakura-chroma.html" title="Slide Studio sample deck" aria-hidden="true"></iframe>
+        <div class="hero-content">
+            <div class="kicker">Portfolio MVP</div>
+            <h1>Slide Studio</h1>
+            <p>An AI slide workspace that generates polished HTML decks, supports chat-based edits, preserves project history, and exports presentation-ready files.</p>
+            <div class="hero-actions">
+                <a class="primary" href="/">Open app</a>
+                <a href="/ai-creation-sakura-chroma.html">View sample deck</a>
+                <a href="/ai-notes-launch.html">Second sample</a>
+            </div>
+        </div>
+    </section>
+
+    <main>
+        <section class="band">
+            <div class="inner">
+                <div class="section-head">
+                    <h2>What It Demonstrates</h2>
+                    <p>The project is built as a practical PM and AI product portfolio piece: a focused MVP with generation, editing, storage, presentation, and delivery workflows.</p>
+                </div>
+                <div class="metrics">
+                    <div class="item"><strong>Prompt to deck</strong><span>Template-aware HTML slide generation with fixed-stage presentation output.</span></div>
+                    <div class="item"><strong>Edit loop</strong><span>Chat edits, annotation workflow, undo, and version history.</span></div>
+                    <div class="item"><strong>Deliverables</strong><span>Fullscreen presentation, HTML download, PDF export, and persistent projects.</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="band alt">
+            <div class="inner">
+                <div class="section-head">
+                    <h2>Core User Flow</h2>
+                    <p>The demo account opens directly into a portfolio-ready workspace with sample projects, so reviewers can evaluate the experience without setup.</p>
+                </div>
+                <div class="flow">
+                    <div class="step"><b>1. Log in</b><span>Use the demo account shown on the login screen.</span></div>
+                    <div class="step"><b>2. Open history</b><span>Review seeded sample projects and saved versions.</span></div>
+                    <div class="step"><b>3. Edit</b><span>Ask the AI to revise a slide or use annotations for targeted changes.</span></div>
+                    <div class="step"><b>4. Present</b><span>Expand fullscreen, navigate with the keyboard, and export HTML/PDF.</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="band">
+            <div class="inner">
+                <div class="section-head">
+                    <h2>Implementation Choices</h2>
+                    <p>The MVP uses SQLite plus local file storage for a deployable single-service architecture. The same product boundaries can move to Postgres/Supabase when real multi-user scale matters.</p>
+                </div>
+                <div class="features">
+                    <div class="item"><strong>Auth and persistence</strong><p>Email/password auth, sessions, model configs, decks, messages, comments, versions, and template selections.</p></div>
+                    <div class="item"><strong>Local-first storage</strong><p>Generated HTML files live on disk; structured metadata lives in SQLite. This keeps the demo simple and inspectable.</p></div>
+                    <div class="item"><strong>Deployment-ready</strong><p>Docker, Render config, environment variables, demo seeding, README, case study, and demo script are included.</p></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

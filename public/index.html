@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <aside class="rail">
+        <div class="rail-logo">S</div>
+        <button class="rail-button active" type="button" title="Home" aria-label="Home" data-rail-action="home">
+            <span>⌂</span>
+        </button>
+        <button class="rail-button" type="button" title="Templates" aria-label="Templates" data-rail-action="templates">
+            <span>▦</span>
+        </button>
+        <button class="rail-button" type="button" title="History" aria-label="History" data-rail-action="history">
+            <span>◷</span>
+        </button>
+        <button class="rail-button" type="button" title="Settings" aria-label="Settings" data-rail-action="settings">
+            <span>⚙</span>
+        </button>
+        <button class="rail-user" id="userButton" type="button" title="Account">?</button>
+    </aside>
+
+    <main class="app">
+        <div class="toast hidden" id="toast"></div>
+        <section class="error-panel hidden" id="errorPanel" aria-live="polite">
+            <header>
+                <strong>Runtime issues</strong>
+                <button id="clearErrorsBtn" type="button" aria-label="Clear errors">×</button>
+            </header>
+            <div class="error-list" id="errorList"></div>
+        </section>
+        <section class="auth-view" id="authView">
+            <div class="auth-panel">
+                <div class="auth-brand">Slide Studio</div>
+                <h1>登录后开始制作网页 slides</h1>
+                <p>本地账号用于保存模型配置、生成记录和标注修改。</p>
+                <div class="demo-credentials">
+                    <strong>Demo account</strong>
+                    <span>demo@slidestudio.local / demo1234</span>
+                </div>
+                <form id="authForm" class="auth-form">
+                    <input id="nameInput" name="name" placeholder="Name" autocomplete="name">
+                    <input id="emailInput" name="email" type="email" placeholder="Email" autocomplete="email" required>
+                    <input id="passwordInput" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
+                    <div class="auth-actions">
+                        <button type="submit" id="loginBtn">Log in</button>
+                        <button type="button" id="signupBtn">Create account</button>
+                    </div>
+                    <div class="form-error" id="authError"></div>
+                </form>
+            </div>
+        </section>
+
+        <section class="home-view hidden" id="homeView">
+            <header class="topline">
+                <div class="brand-lockup">
+                    <div class="brand-mark">S</div>
+                    <div>
+                        <div class="crumb">Slide Studio</div>
+                        <span>AI slide maker</span>
+                    </div>
+                </div>
+                <div class="account-pill">
+                    <span id="accountName">Local user</span>
+                    <button id="logoutBtn" type="button">Logout</button>
+                </div>
+            </header>
+
+            <section class="home-hero">
+                <div class="hero-copy">
+                    <h1>How can I help you today?</h1>
+                    <p>Build polished HTML slides from a prompt and a selected visual template.</p>
+                </div>
+
+                <section class="composer" aria-label="Slide generation composer">
+                    <div class="composer-input-row">
+                        <textarea id="promptInput" placeholder="Create a 10-page product launch deck about an AI creation tool"></textarea>
+                        <button class="send-btn" id="generateBtn" type="button" title="Generate">↑</button>
+                    </div>
+                    <div class="composer-footer">
+                        <div class="composer-tools">
+                            <button class="icon-btn" type="button" title="Attach file">＋</button>
+                            <button class="icon-btn" type="button" title="Workflow">⌘</button>
+                            <button class="icon-btn" type="button" title="Fast mode">ϟ</button>
+                            <button class="mode-chip active" type="button">Slides</button>
+                            <button class="mode-chip" type="button">PowerPoint</button>
+                            <button class="mode-chip" type="button">Frontend (HTML)</button>
+                        </div>
+                        <div class="composer-actions">
+                            <button class="icon-btn" id="modelBtn" type="button" title="Model settings">⚙</button>
+                        </div>
+                    </div>
+                    <div class="selected-template" id="selectedTemplate">
+                        <span>No template selected</span>
+                    </div>
+                    <div class="generation-status hidden" id="generationStatus">
+                        <span class="status-spinner"></span>
+                        <div>
+                            <strong id="generationStatusTitle">Generating slides</strong>
+                            <span id="generationStatusDetail">Reading template rules and calling your AI provider.</span>
+                        </div>
+                        <button class="retry-btn hidden" id="retryGenerateBtn" type="button">Retry</button>
+                    </div>
+                </section>
+            </section>
+
+            <section class="quick-actions">
+                <button class="quick-card" type="button" data-fill="Create a 10-page product launch deck about an AI creation tool.">
+                    <strong>Create</strong>
+                    <span>Start from a prompt and selected template.</span>
+                </button>
+                <button class="quick-card" type="button" data-fill="Improve my existing deck with stronger layout, visuals, and storytelling.">
+                    <strong>Improve</strong>
+                    <span>Upload slides to enhance structure and craft.</span>
+                </button>
+                <button class="quick-card" type="button" data-fill="Convert this document into a structured HTML slide deck.">
+                    <strong>Convert</strong>
+                    <span>Turn files into frontend slide decks.</span>
+                </button>
+            </section>
+
+            <section class="recent-section">
+                <div class="section-head compact">
+                    <div>
+                        <h2>Recent projects</h2>
+                        <p>Open a generated deck and continue editing.</p>
+                    </div>
+                    <button class="template-action" type="button" id="refreshHomeDecksBtn">Refresh</button>
+                </div>
+                <div class="home-deck-list" id="homeDeckList"></div>
+            </section>
+
+            <section class="templates-section">
+                <div class="section-head">
+                    <div>
+                        <h2>Templates</h2>
+                        <p>Choose a deck style first, then generate with your prompt.</p>
+                    </div>
+                    <button class="template-action" type="button" id="blankDeckBtn">Blank deck</button>
+                </div>
+                <nav class="template-tabs" id="templateTabs">
+                    <button class="active" type="button" data-category="All templates">All templates</button>
+                    <button type="button" data-category="Design & creative">Design & creative</button>
+                    <button type="button" data-category="General">General</button>
+                    <button type="button" data-category="Marketing growth">Marketing growth</button>
+                    <button type="button" data-category="Product research">Product research</button>
+                    <button type="button" data-category="Go-to-market">Go-to-market</button>
+                    <button type="button" data-category="Job & career">Job & career</button>
+                    <button type="button" data-category="My templates">My templates</button>
+                </nav>
+                <div class="template-grid" id="templateGrid"></div>
+            </section>
+        </section>
+
+        <section class="workspace hidden" id="workspaceView">
+            <aside class="project-pane">
+                <div class="project-pane-head">
+                    <strong>Projects</strong>
+                    <button id="refreshDecksBtn" type="button" title="Refresh history">↻</button>
+                </div>
+                <div class="deck-list" id="deckList"></div>
+            </aside>
+            <aside class="chat-pane">
+                <div class="workspace-head">
+                    <button id="backHomeBtn" type="button">← Home</button>
+                    <div>
+                        <strong id="deckTitle">Generated deck</strong>
+                        <span id="deckMeta">HTML Slides</span>
+                    </div>
+                </div>
+                <div class="chat-log" id="chatLog"></div>
+                <form class="chat-form" id="chatForm">
+                    <textarea id="chatInput" placeholder="Ask AI to edit the selected slide..."></textarea>
+                    <div class="chat-actions">
+                        <button id="editCurrentBtn" type="button">Edit current slide</button>
+                        <button id="sendChatBtn" type="submit">Send</button>
+                    </div>
+                </form>
+            </aside>
+
+            <section class="preview-pane">
+                <header class="preview-toolbar">
+                    <div class="preview-tabs">
+                        <button class="active" type="button">Preview</button>
+                        <button id="annotateBtn" type="button">Annotate</button>
+                    </div>
+                    <div class="preview-actions">
+                        <span class="page-pill" id="pageIndicator">Slide 1 / 1</span>
+                        <button id="undoBtn" type="button">Undo</button>
+                        <button id="regenerateBtn" type="button">Regenerate</button>
+                        <button id="exportBtn" type="button">Download HTML</button>
+                        <button id="exportPdfBtn" type="button">Export PDF</button>
+                        <button id="expandBtn" type="button">Expand</button>
+                    </div>
+                </header>
+                <div class="preview-stage" id="previewStage">
+                    <iframe id="slideFrame" title="Slide preview"></iframe>
+                    <div class="annotation-layer hidden" id="annotationLayer"></div>
+                    <div class="edit-overlay hidden" id="editOverlay">
+                        <span class="status-spinner"></span>
+                        <strong id="editOverlayTitle">Applying edit</strong>
+                    </div>
+                    <aside class="annotation-panel hidden" id="annotationPanel">
+                        <header>
+                            <strong>Annotations</strong>
+                            <button id="closeAnnotationPanelBtn" type="button">×</button>
+                        </header>
+                        <div class="annotation-list" id="annotationList"></div>
+                    </aside>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog class="model-dialog" id="modelDialog">
+        <form class="model-card" id="modelForm">
+            <header>
+                <strong>Model configuration</strong>
+                <button type="button" id="closeModelBtn" value="cancel">×</button>
+            </header>
+            <label>Provider<input id="providerInput" value="OpenAI"></label>
+            <label>Base URL<input id="baseUrlInput" value="https://api.openai.com/v1" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"></label>
+            <label>Model<input id="modelInput" value="gpt-4.1" placeholder="qwen-plus"></label>
+            <label>API Key<input id="apiKeyInput" type="password" placeholder="Stored locally for this local demo"></label>
+            <p class="model-hint" id="modelHint">For Qwen, use DashScope compatible mode base URL and a qwen model name.</p>
+            <label>Output
+                <select id="outputInput">
+                    <option>Frontend (HTML)</option>
+                    <option>PowerPoint</option>
+                    <option>PDF</option>
+                </select>
+            </label>
+            <button class="save-model" type="submit">Save</button>
+        </form>
+    </dialog>
+
+    <div class="fullscreen hidden" id="fullscreenView">
+        <button class="close-fullscreen" id="closeFullscreenBtn" type="button">×</button>
+        <iframe id="fullscreenFrame" title="Fullscreen slide preview"></iframe>
+        <form class="fullscreen-chat" id="fullscreenChatForm">
+            <button id="fullscreenPrevBtn" type="button" title="Previous slide">‹</button>
+            <span id="fullscreenPageIndicator">1 / 1</span>
+            <input id="fullscreenChatInput" placeholder="Ask AI to edit this deck...">
+            <button type="submit">Send</button>
+            <button id="fullscreenNextBtn" type="button" title="Next slide">›</button>
+        </form>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+</body>
+</html>

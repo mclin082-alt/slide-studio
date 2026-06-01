@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: slide-studio
+    env: docker
+    plan: starter
+    disk:
+      name: slide-studio-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SLIDE_STUDIO_DATA_DIR
+        value: /var/data
+      - key: CHROME_PATH
+        value: /usr/bin/chromium
+      - key: SEED_DEMO
+        value: true
+      - key: DEMO_EMAIL
+        value: demo@slidestudio.local
+      - key: DEMO_PASSWORD
+        value: demo1234

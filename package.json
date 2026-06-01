@@ -1,0 +1,16 @@
+{
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "vite build public --outDir ../dist --emptyOutDir",
+    "test": "node --check server.js && node --check public/app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "vite": "^5.4.11"
+  },
+  "devDependencies": {}
+}

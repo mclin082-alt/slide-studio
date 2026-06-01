@@ -1,0 +1,1381 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花火工坊 - AI 创作工具产品发布会</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&amp;family=Big+Shoulders+Display:wght@700;900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@500;700&amp;display=swap" rel="stylesheet">
+    <link href="https://chinese-fonts-cdn.deno.dev/packages/zcool-xiaowei/dist/ZCOOLXiaoWei-Regular/result.css" rel="stylesheet">
+    <link href="https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkai/dist/LXGWWenKai-Regular/result.css" rel="stylesheet">
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (THEME)
+           Sakura Chroma: cream paper, warm ink, cassette catalogue colors
+           =========================================== */
+        :root {
+            --stage-bg: #3A2516;
+            --slide-bg: #F1E6CB;
+            --paper: #F1E6CB;
+            --paper-dk: #E5D6B0;
+            --ink: #3A2516;
+            --red: #E5392A;
+            --pink: #E54489;
+            --orange: #F09131;
+            --yellow: #F0BC2A;
+            --green: #3D9F47;
+            --blue: #3F8BC4;
+            --font-display: 'Big Shoulders Display', 'ZCOOL XiaoWei', sans-serif;
+            --font-body: 'Albert Sans', 'LXGW WenKai', sans-serif;
+            --font-mono: 'JetBrains Mono', 'LXGW WenKai', ui-monospace, monospace;
+            --font-jp: 'Noto Sans JP', sans-serif;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ===========================================
+           RESET
+           =========================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ===========================================
+           FIXED 16:9 STAGE: MANDATORY BASE STYLES
+           Include this ENTIRE file in every presentation.
+           Slides are authored at 1920×1080 and scaled as a whole.
+           =========================================== */
+
+        /* 1. Lock the browser viewport */
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        /* 2. Full-window deck viewport */
+        .deck-viewport {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: var(--stage-bg, #000);
+        }
+
+        /* 3. Fixed 16:9 design canvas.
+           JavaScript sets transform: translate(...) scale(...). */
+        .deck-stage {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            transform-origin: 0 0;
+            background: var(--slide-bg, #fff);
+        }
+
+        /* 4. Slides stack inside the fixed stage.
+           Content must be laid out at 1920×1080, not reflowed per device. */
+        .slide {
+            position: absolute;
+            inset: 0;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background: var(--slide-bg, #fff);
+        }
+
+        .slide.active,
+        .slide.visible {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        /* 5. Keep media inside authored slide bounds */
+        img,
+        video,
+        canvas,
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* 6. Presentation chrome stays outside the slide design system */
+        .deck-controls {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        /* 7. Print one fixed-size slide per page */
+        @media print {
+            html,
+            body {
+                width: 1920px;
+                height: auto;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-viewport {
+                position: static;
+                overflow: visible;
+                background: #fff;
+            }
+
+            .deck-stage {
+                position: static;
+                width: auto;
+                height: auto;
+                transform: none !important;
+                background: none;
+            }
+
+            .slide {
+                position: relative;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                width: 1920px;
+                height: 1080px;
+                break-after: page;
+                page-break-after: always;
+            }
+
+            .slide:last-child {
+                break-after: auto;
+                page-break-after: auto;
+            }
+
+            .deck-controls {
+                display: none !important;
+            }
+        }
+
+        /* 8. Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* ===========================================
+           GLOBAL SLIDE SURFACE
+           =========================================== */
+        body {
+            color: var(--ink);
+            font-family: var(--font-body);
+        }
+
+        .slide {
+            padding: 68px 76px 86px;
+            color: var(--ink);
+        }
+
+        .slide::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background-image: radial-gradient(circle at 1px 1px, rgba(58, 37, 22, 0.55) 1px, transparent 1.6px);
+            background-size: 4px 4px;
+            opacity: 0.16;
+            pointer-events: none;
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+        }
+
+        h1,
+        h2,
+        h3,
+        .display {
+            font-family: var(--font-display);
+            font-weight: 900;
+            letter-spacing: 0;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: 166px;
+            line-height: 0.95;
+        }
+
+        h2 {
+            font-size: 92px;
+            line-height: 1.05;
+        }
+
+        h3 {
+            font-size: 46px;
+            line-height: 1.05;
+        }
+
+        p {
+            font-family: var(--font-body);
+            font-size: 28px;
+            line-height: 1.72;
+        }
+
+        em {
+            color: var(--red);
+            font-style: normal;
+        }
+
+        .micro {
+            font-family: var(--font-body);
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            letter-spacing: 0.02em;
+        }
+
+        .topbar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+            gap: 40px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .topbar h2 {
+            max-width: 1180px;
+        }
+
+        .page-num {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            z-index: 4;
+            font-family: var(--font-mono);
+            font-size: 18px;
+        }
+
+        /* ===========================================
+           SAKURA CHROMA DECORATIVE VOCABULARY
+           =========================================== */
+        .petals {
+            position: absolute;
+            width: 168px;
+            height: 140px;
+            z-index: 2;
+        }
+
+        .petal {
+            position: absolute;
+            width: 78px;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            border: 2px solid var(--ink);
+        }
+
+        .petal.red { background: var(--red); left: 18px; top: 8px; }
+        .petal.pink { background: var(--pink); left: 74px; top: 4px; }
+        .petal.orange { background: var(--orange); left: 44px; top: 52px; }
+        .petal.green { background: var(--green); left: 0; top: 64px; }
+        .petal.blue { background: var(--blue); left: 96px; top: 58px; }
+
+        .ribbon {
+            position: absolute;
+            z-index: 0;
+            width: 2400px;
+            height: 330px;
+            transform: rotate(-22deg);
+            transform-origin: center;
+            pointer-events: none;
+        }
+
+        .ribbon span {
+            display: block;
+            height: 66px;
+            border-top: 2px solid var(--ink);
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .ribbon .r1 { background: var(--pink); }
+        .ribbon .r2 { background: var(--orange); }
+        .ribbon .r3 { background: var(--yellow); }
+        .ribbon .r4 { background: var(--green); }
+        .ribbon .r5 { background: var(--blue); }
+
+        .seal {
+            display: grid;
+            place-items: center;
+            width: 150px;
+            aspect-ratio: 1 / 1;
+            color: var(--paper);
+            background: var(--ink);
+            clip-path: polygon(50% 0%, 56% 15%, 69% 4%, 72% 21%, 89% 11%, 85% 29%, 100% 35%, 84% 44%, 98% 56%, 81% 61%, 89% 79%, 71% 75%, 65% 96%, 52% 82%, 38% 100%, 34% 78%, 16% 89%, 22% 70%, 2% 65%, 18% 53%, 0% 43%, 19% 37%, 10% 20%, 29% 24%, 35% 4%, 47% 18%);
+            font-family: var(--font-display);
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 0.9;
+            text-align: center;
+        }
+
+        .stamp {
+            display: inline-block;
+            padding: 13px 22px;
+            color: var(--paper);
+            background: var(--red);
+            font-family: var(--font-display);
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            transform: rotate(-3deg);
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 8px 14px;
+            color: var(--paper);
+            background: var(--blue);
+            font-family: var(--font-mono);
+            font-size: 16px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .chip.red { background: var(--red); }
+        .chip.pink { background: var(--pink); }
+        .chip.orange { background: var(--orange); }
+        .chip.green { background: var(--green); }
+        .chip.blue { background: var(--blue); }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-family: var(--font-body);
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .box {
+            display: grid;
+            place-items: center;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--ink);
+            font-family: var(--font-display);
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .box.on {
+            color: var(--paper);
+            background: var(--ink);
+        }
+
+        /* ===========================================
+           CARD AND TABLE COMPONENTS
+           =========================================== */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 44px;
+        }
+
+        .product-card {
+            min-height: 510px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            overflow: hidden;
+        }
+
+        .topstrip {
+            height: 34px;
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .topstrip.red { background: var(--red); }
+        .topstrip.pink { background: var(--pink); }
+        .topstrip.orange { background: var(--orange); }
+        .topstrip.blue { background: var(--blue); }
+
+        .card-body {
+            padding: 28px 24px;
+        }
+
+        .card-body p {
+            margin-top: 18px;
+            font-size: 21px;
+        }
+
+        .specs {
+            display: grid;
+            gap: 12px;
+            margin-top: 26px;
+            padding-top: 22px;
+            border-top: 1px dashed var(--ink);
+        }
+
+        .spec {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 15px;
+        }
+
+        .ledger {
+            margin-top: 46px;
+            border-top: 2px solid var(--ink);
+        }
+
+        .ledger-row {
+            display: grid;
+            grid-template-columns: 130px 1.4fr 0.75fr 150px 86px;
+            gap: 22px;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(58, 37, 22, 0.22);
+        }
+
+        .ledger-row .title {
+            font-family: var(--font-display);
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .eq {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 14px;
+            height: 360px;
+            margin-top: 44px;
+            padding: 22px;
+            border: 2px solid var(--ink);
+            background: var(--paper-dk);
+        }
+
+        .eq-col {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 8px;
+        }
+
+        .seg {
+            flex: 1;
+            border: 1px solid rgba(58, 37, 22, 0.22);
+            background: rgba(58, 37, 22, 0.10);
+        }
+
+        .seg.on.red { background: var(--red); }
+        .seg.on.pink { background: var(--pink); }
+        .seg.on.orange { background: var(--orange); }
+        .seg.on.yellow { background: var(--yellow); }
+        .seg.on.green { background: var(--green); }
+        .seg.on.blue { background: var(--blue); }
+
+        .quote-box {
+            position: relative;
+            width: 1240px;
+            padding: 58px 66px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            box-shadow: 8px 8px 0 var(--ink);
+        }
+
+        .quote-box h2 {
+            font-size: 112px;
+        }
+
+        /* ===========================================
+           SLIDE LAYOUTS
+           =========================================== */
+        .cover .ribbon {
+            left: -350px;
+            top: 210px;
+        }
+
+        .cover .petals {
+            right: 104px;
+            top: 84px;
+        }
+
+        .cover .seal {
+            position: absolute;
+            right: 172px;
+            bottom: 156px;
+        }
+
+        .cover-lockup {
+            position: absolute;
+            left: 76px;
+            top: 106px;
+            width: 850px;
+            padding: 20px 30px 28px;
+            color: var(--paper);
+            background: var(--pink);
+            border: 2px solid var(--ink);
+        }
+
+        .cover h1 {
+            position: absolute;
+            left: 76px;
+            top: 324px;
+            width: 1160px;
+            font-size: 176px;
+        }
+
+        .cover .lead {
+            position: absolute;
+            left: 86px;
+            bottom: 178px;
+            width: 720px;
+            font-size: 30px;
+            font-weight: 600;
+        }
+
+        .cover-spec {
+            position: absolute;
+            left: 86px;
+            bottom: 78px;
+            display: flex;
+            gap: 30px;
+            padding-top: 22px;
+            border-top: 2px solid var(--ink);
+        }
+
+        .statement {
+            display: grid;
+            grid-template-columns: 0.86fr 1.14fr;
+            align-items: center;
+            gap: 72px;
+            height: 100%;
+        }
+
+        .statement h2 {
+            width: auto;
+            font-size: 106px;
+            text-align: left;
+        }
+
+        .statement-copy {
+            position: relative;
+            padding: 44px 0 44px 38px;
+            border-left: 16px solid var(--red);
+        }
+
+        .statement-copy .micro {
+            margin-bottom: 30px;
+            color: var(--blue);
+        }
+
+        .statement-copy p {
+            width: 640px;
+            margin-top: 34px;
+            font-size: 27px;
+            font-weight: 600;
+        }
+
+        .flow-board {
+            position: relative;
+            height: 720px;
+            border: 2px solid var(--ink);
+            background: var(--paper-dk);
+            box-shadow: 10px 10px 0 var(--ink);
+            overflow: hidden;
+        }
+
+        .flow-board::before {
+            content: "";
+            position: absolute;
+            inset: 42px;
+            border: 2px dashed rgba(58, 37, 22, 0.42);
+        }
+
+        .flow-node {
+            position: absolute;
+            width: 220px;
+            height: 138px;
+            padding: 22px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .flow-node strong {
+            display: block;
+            font-family: var(--font-display);
+            font-size: 42px;
+            line-height: 0.95;
+        }
+
+        .flow-node span {
+            display: block;
+            margin-top: 12px;
+            font-family: var(--font-mono);
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        .flow-node.idea { left: 86px; top: 90px; border-top: 18px solid var(--red); }
+        .flow-node.copy { right: 86px; top: 90px; border-top: 18px solid var(--pink); }
+        .flow-node.visual { left: 86px; bottom: 90px; border-top: 18px solid var(--orange); }
+        .flow-node.launch { right: 86px; bottom: 90px; border-top: 18px solid var(--blue); }
+
+        .flow-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            display: grid;
+            place-items: center;
+            width: 250px;
+            height: 250px;
+            color: var(--paper);
+            background: var(--ink);
+            border: 2px solid var(--ink);
+            transform: translate(-50%, -50%) rotate(-4deg);
+        }
+
+        .flow-center strong {
+            font-family: var(--font-display);
+            font-size: 64px;
+            line-height: 0.9;
+            text-align: center;
+        }
+
+        .flow-center span {
+            position: absolute;
+            bottom: 28px;
+            font-family: var(--font-mono);
+            font-size: 16px;
+            color: var(--yellow);
+        }
+
+        .flow-line {
+            position: absolute;
+            height: 4px;
+            background: var(--ink);
+            transform-origin: left center;
+        }
+
+        .flow-line::after {
+            content: "";
+            position: absolute;
+            right: -2px;
+            top: 50%;
+            width: 0;
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 18px solid var(--ink);
+            transform: translateY(-50%);
+        }
+
+        .flow-line.l1 { left: 292px; top: 211px; width: 190px; transform: rotate(26deg); }
+        .flow-line.l2 { right: 292px; top: 211px; width: 190px; transform: rotate(154deg); }
+        .flow-line.l3 { left: 292px; bottom: 211px; width: 190px; transform: rotate(-26deg); }
+        .flow-line.l4 { right: 292px; bottom: 211px; width: 190px; transform: rotate(-154deg); }
+
+        .flow-stamp {
+            position: absolute;
+            left: 50%;
+            bottom: 38px;
+            padding: 12px 22px;
+            color: var(--paper);
+            background: var(--red);
+            border: 2px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 18px;
+            transform: translateX(-50%);
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 0.88fr 1.12fr;
+            gap: 54px;
+            margin-top: 44px;
+            height: 780px;
+        }
+
+        .left-panel,
+        .right-panel {
+            border: 2px solid var(--ink);
+            background: var(--paper-dk);
+            padding: 38px;
+        }
+
+        .left-panel h3 {
+            font-size: 66px;
+        }
+
+        .left-panel p,
+        .right-panel p {
+            margin-top: 24px;
+            font-size: 24px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 44px;
+        }
+
+        .stat {
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            padding: 38px;
+        }
+
+        .stat strong {
+            display: block;
+            color: var(--red);
+            font-family: var(--font-display);
+            font-size: 138px;
+            font-weight: 900;
+            line-height: 0.85;
+        }
+
+        .stat:nth-child(2) strong {
+            color: var(--blue);
+        }
+
+        .roadmap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .road {
+            min-height: 570px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .road .band {
+            height: 150px;
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .road:nth-child(1) .band { background: var(--red); }
+        .road:nth-child(2) .band { background: var(--orange); }
+        .road:nth-child(3) .band { background: var(--green); }
+        .road:nth-child(4) .band { background: var(--blue); }
+
+        .road .body {
+            padding: 28px;
+        }
+
+        .road p {
+            margin-top: 20px;
+            font-size: 22px;
+        }
+
+        .closing .ribbon {
+            right: -420px;
+            top: 280px;
+            transform: rotate(22deg);
+        }
+
+        .closing .petals {
+            left: 116px;
+            bottom: 122px;
+        }
+
+        .closing h2 {
+            position: absolute;
+            left: 76px;
+            top: 150px;
+            width: 1120px;
+            font-size: 156px;
+        }
+
+        .closing .stamp {
+            position: absolute;
+            right: 126px;
+            top: 110px;
+        }
+
+        .closing .seal {
+            position: absolute;
+            right: 202px;
+            bottom: 140px;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        @keyframes printIn {
+            0% { opacity: 0; transform: translateY(28px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes ribbonSlide {
+            0% { translate: -80px 0; }
+            50% { translate: 80px 0; }
+            100% { translate: -80px 0; }
+        }
+
+        @keyframes petalBeat {
+            0%, 100% { scale: 1; }
+            50% { scale: 1.08; }
+        }
+
+        @keyframes sealSpin {
+            0% { rotate: -7deg; }
+            50% { rotate: 7deg; }
+            100% { rotate: -7deg; }
+        }
+
+        @keyframes eqPop {
+            0% { transform: scaleY(0.2); }
+            100% { transform: scaleY(1); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+        }
+
+        .visible .reveal {
+            animation: printIn 680ms var(--ease) forwards;
+        }
+
+        .visible .delay-1 { animation-delay: 110ms; }
+        .visible .delay-2 { animation-delay: 220ms; }
+        .visible .delay-3 { animation-delay: 330ms; }
+        .visible .delay-4 { animation-delay: 440ms; }
+
+        .visible .ribbon {
+            animation: ribbonSlide 9s ease-in-out infinite;
+        }
+
+        .visible .petal {
+            animation: petalBeat 2.7s ease-in-out infinite;
+        }
+
+        .visible .seal {
+            animation: sealSpin 4.8s ease-in-out infinite;
+        }
+
+        .visible .seg.on {
+            transform-origin: bottom;
+            animation: eqPop 520ms var(--ease) both;
+        }
+
+        /* ===========================================
+           PRESENTATION CHROME AND EDITING
+           =========================================== */
+        .deck-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            color: var(--paper);
+            border: 2px solid var(--ink);
+            background: var(--red);
+            font-family: var(--font-mono);
+            opacity: 0.38;
+            transition: opacity 180ms ease;
+        }
+
+        .deck-controls:hover {
+            opacity: 1;
+        }
+
+        .deck-controls button,
+        .edit-toggle,
+        .export-button {
+            border: 2px solid var(--ink);
+            color: var(--ink);
+            background: var(--paper);
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .deck-controls button {
+            width: 42px;
+            height: 42px;
+        }
+
+        .progress {
+            width: 190px;
+            height: 10px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+        }
+
+        .progress-bar {
+            width: 10%;
+            height: 100%;
+            background: var(--blue);
+            transition: width 260ms var(--ease);
+        }
+
+        .edit-hotzone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 84px;
+            height: 84px;
+            z-index: 10000;
+            cursor: pointer;
+        }
+
+        .edit-toggle,
+        .export-button {
+            position: fixed;
+            left: 18px;
+            z-index: 10001;
+            width: 48px;
+            height: 48px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 220ms ease;
+        }
+
+        .edit-toggle { top: 18px; }
+        .export-button { top: 74px; }
+
+        .edit-toggle.show,
+        .edit-toggle.active,
+        .export-button.show,
+        .export-button.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .editing [data-editable="true"] {
+            outline: 3px solid var(--blue);
+            outline-offset: 6px;
+        }
+    </style>
+</head>
+<body class="editing">
+    <div class="deck-viewport">
+        <main class="deck-stage" id="deckStage" style="transform: translate(0px, 92.875px) scale(0.502083);">
+            <section class="slide cover active visible">
+                <div class="ribbon"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span></div>
+                <div class="petals"><span class="petal red"></span><span class="petal pink"></span><span class="petal orange"></span><span class="petal green"></span><span class="petal blue"></span></div>
+                <div class="slide-content">
+                    <div class="cover-lockup reveal">
+                        <div class="micro">AI CREATION TOOL / NEW RELEASE</div>
+                        <div class="display" style="font-size: 72px; margin-top: 8px;" data-editable="true" contenteditable="true">花火工坊</div>
+                    </div>
+                    <h1 class="reveal delay-1" data-editable="true" contenteditable="true">Turn Ideas Into Work</h1>
+                    <p class="lead reveal delay-2" data-editable="true" contenteditable="true">一个面向创作者的 AI 工作台：从想法、文案、视觉到发布资产，一次完成。</p>
+                    <div class="cover-spec reveal delay-3">
+                        <div class="checkbox-row"><span class="box on">×</span><span>图文生成</span></div>
+                        <div class="checkbox-row"><span class="box on">×</span><span>品牌一致</span></div>
+                        <div class="checkbox-row"><span class="box"></span><span>即刻发布</span></div>
+                    </div>
+                    <div class="seal reveal delay-4">新</div>
+                    <div class="page-num">01 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content statement">
+                    <div class="statement-copy reveal">
+                        <div class="micro">WHY NOW / CREATOR WORKFLOW</div>
+                        <h2 data-editable="true" contenteditable="true">创作不是缺少工具，而是缺少一个能接住<em>全过程</em>的伙伴。</h2>
+                        <p data-editable="true" contenteditable="true">从灵感到发布，每一步都在切换工具、丢失上下文。花火工坊把这些断点连成一个可持续的创作工作台。</p>
+                    </div>
+                    <div class="flow-board reveal delay-2" aria-label="Creative workflow map">
+                        <div class="flow-line l1"></div>
+                        <div class="flow-line l2"></div>
+                        <div class="flow-line l3"></div>
+                        <div class="flow-line l4"></div>
+                        <div class="flow-node idea"><strong>Idea</strong><span>capture signal</span></div>
+                        <div class="flow-node copy"><strong>Copy</strong><span>keep voice</span></div>
+                        <div class="flow-node visual"><strong>Visual</strong><span>match style</span></div>
+                        <div class="flow-node launch"><strong>Launch</strong><span>ship formats</span></div>
+                        <div class="flow-center"><strong>One<br>Flow</strong><span>AI PARTNER</span></div>
+                        <div class="flow-stamp">LESS SWITCHING / MORE MAKING</div>
+                    </div>
+                    <div class="page-num">02 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">创作者今天被迫在四个世界里来回切换</h2>
+                        <div class="micro">CURRENT PAIN</div>
+                    </div>
+                    <div class="card-grid">
+                        <article class="product-card reveal delay-1"><div class="topstrip red"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">想法</h3><p data-editable="true" contenteditable="true">灵感散在聊天、备忘录和白板里，很难变成清晰方向。</p><div class="specs"><div class="spec"><span>MODE</span><span>IDEA CAPTURE</span></div><div class="spec"><span>LOSS</span><span>CONTEXT</span></div></div></div></article>
+                        <article class="product-card reveal delay-2"><div class="topstrip pink"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">文案</h3><p data-editable="true" contenteditable="true">写标题、脚本、短文案，每一步都要反复搬运上下文。</p><div class="specs"><div class="spec"><span>MODE</span><span>COPY DRAFT</span></div><div class="spec"><span>LOSS</span><span>VOICE</span></div></div></div></article>
+                        <article class="product-card reveal delay-3"><div class="topstrip orange"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">视觉</h3><p data-editable="true" contenteditable="true">图片和版式生成很快，但常常不像同一个品牌。</p><div class="specs"><div class="spec"><span>MODE</span><span>VISUAL MAKE</span></div><div class="spec"><span>LOSS</span><span>STYLE</span></div></div></div></article>
+                        <article class="product-card reveal delay-4"><div class="topstrip blue"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">发布</h3><p data-editable="true" contenteditable="true">平台尺寸、语气、封面、摘要，最后一公里最耗时间。</p><div class="specs"><div class="spec"><span>MODE</span><span>PUBLISH KIT</span></div><div class="spec"><span>LOSS</span><span>MOMENTUM</span></div></div></div></article>
+                    </div>
+                    <div class="page-num">03 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">Hanabi Studio Turns Creation Into One Flow</h2>
+                        <div class="micro">PRODUCT IDEA</div>
+                    </div>
+                    <div class="two-col">
+                        <div class="left-panel reveal delay-1">
+                            <span class="stamp">ONE FLOW</span>
+                            <h3 style="margin-top: 34px;" data-editable="true" contenteditable="true">从一句话到整套发布资产</h3>
+                            <p data-editable="true" contenteditable="true">输入一个目标，AI 自动拆成内容结构、视觉方向、渠道版本和发布清单。</p>
+                        </div>
+                        <div class="right-panel reveal delay-2">
+                            <div class="ledger">
+                                <div class="ledger-row"><span class="mono">TRACK 01</span><span class="title">灵感扩写</span><span>idea to brief</span><span class="chip red">draft</span><span>NR</span></div>
+                                <div class="ledger-row"><span class="mono">TRACK 02</span><span class="title">品牌语气</span><span>voice lock</span><span class="chip pink">tone</span><span>HX</span></div>
+                                <div class="ledger-row"><span class="mono">TRACK 03</span><span class="title">视觉套件</span><span>image set</span><span class="chip orange">visual</span><span>FX</span></div>
+                                <div class="ledger-row"><span class="mono">TRACK 04</span><span class="title">多端发布</span><span>format pack</span><span class="chip blue">ship</span><span>LP</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-num">04 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">四个核心模块，一起保持创作的连续性</h2>
+                        <div class="micro">CORE MODULES</div>
+                    </div>
+                    <div class="card-grid">
+                        <article class="product-card reveal delay-1"><div class="topstrip red"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">Idea Deck</h3><p data-editable="true" contenteditable="true">把模糊想法变成创作简报、受众洞察和内容角度。</p><div class="specs"><div class="spec"><span>INPUT</span><span>一句话 / 链接 / 语音</span></div><div class="spec"><span>OUT</span><span>BRIEF</span></div></div></div></article>
+                        <article class="product-card reveal delay-2"><div class="topstrip pink"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">Voice Lab</h3><p data-editable="true" contenteditable="true">学习品牌语气，生成标题、脚本、长文和社媒版本。</p><div class="specs"><div class="spec"><span>INPUT</span><span>品牌样例</span></div><div class="spec"><span>OUT</span><span>COPY</span></div></div></div></article>
+                        <article class="product-card reveal delay-3"><div class="topstrip orange"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">Visual Reel</h3><p data-editable="true" contenteditable="true">生成图片、封面、配色和版式，自动沿用视觉系统。</p><div class="specs"><div class="spec"><span>INPUT</span><span>风格参考</span></div><div class="spec"><span>OUT</span><span>ASSETS</span></div></div></div></article>
+                        <article class="product-card reveal delay-4"><div class="topstrip blue"></div><div class="card-body"><h3 data-editable="true" contenteditable="true">Launch Kit</h3><p data-editable="true" contenteditable="true">一键导出小红书、公众号、视频脚本和官网物料。</p><div class="specs"><div class="spec"><span>INPUT</span><span>渠道选择</span></div><div class="spec"><span>OUT</span><span>PACK</span></div></div></div></article>
+                    </div>
+                    <div class="page-num">05 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">它不会只给答案，它会给一组可选的创作轨道</h2>
+                        <div class="micro">CREATIVE MIXER</div>
+                    </div>
+                    <div class="two-col">
+                        <div class="left-panel reveal delay-1">
+                            <h3 data-editable="true" contenteditable="true">创作旋钮</h3>
+                            <p data-editable="true" contenteditable="true">你可以调节语气、密度、视觉冲击、商业目标和平台适配。AI 负责保留上下文，创作者负责做选择。</p>
+                            <div style="display:grid; gap: 18px; margin-top: 44px;">
+                                <div class="checkbox-row"><span class="box on">×</span><span>更大胆</span></div>
+                                <div class="checkbox-row"><span class="box on">×</span><span>更像品牌本人</span></div>
+                                <div class="checkbox-row"><span class="box"></span><span>更适合投放</span></div>
+                            </div>
+                        </div>
+                        <div class="right-panel reveal delay-2">
+                            <div class="eq">
+                                <div class="eq-col"><span class="seg on red"></span><span class="seg on red"></span><span class="seg on red"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on pink"></span><span class="seg on pink"></span><span class="seg on pink"></span><span class="seg on pink"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on orange"></span><span class="seg on orange"></span><span class="seg on orange"></span><span class="seg on orange"></span><span class="seg on orange"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on yellow"></span><span class="seg on yellow"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on green"></span><span class="seg on green"></span><span class="seg on green"></span><span class="seg on green"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg on blue"></span></div>
+                                <div class="eq-col"><span class="seg on red"></span><span class="seg on red"></span><span class="seg on red"></span><span class="seg on red"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on pink"></span><span class="seg on pink"></span><span class="seg on pink"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on green"></span><span class="seg on green"></span><span class="seg on green"></span><span class="seg on green"></span><span class="seg on green"></span><span class="seg"></span></div>
+                                <div class="eq-col"><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg on blue"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-num">06 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="ribbon" style="left:-520px; top:420px;"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span></div>
+                <div class="slide-content statement">
+                    <div class="quote-box reveal">
+                        <h2 data-editable="true" contenteditable="true">AI 不替你成为创作者。它让你的判断被放大，速度被释放。</h2>
+                    </div>
+                    <div class="page-num">07 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">发布首月，我们关注三个结果</h2>
+                        <div class="micro">LAUNCH SIGNAL</div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat reveal delay-1"><strong data-editable="true" contenteditable="true">4 X</strong><p data-editable="true" contenteditable="true">从创意简报到首版资产的产出速度。</p></div>
+                        <div class="stat reveal delay-2"><strong data-editable="true" contenteditable="true">80%</strong><p data-editable="true" contenteditable="true">减少跨工具复制、改尺寸、重写语气的机械时间。</p></div>
+                    </div>
+                    <div class="ledger reveal delay-3">
+                        <div class="ledger-row"><span class="mono">WEEK 01</span><span class="title">内测创作者</span><span>100 seats</span><span class="chip red">beta</span><span>ON</span></div>
+                        <div class="ledger-row"><span class="mono">WEEK 02</span><span class="title">品牌模板库</span><span>30 packs</span><span class="chip orange">kit</span><span>ON</span></div>
+                        <div class="ledger-row"><span class="mono">WEEK 04</span><span class="title">渠道导出</span><span>8 formats</span><span class="chip blue">ship</span><span>ON</span></div>
+                    </div>
+                    <div class="page-num">08 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide">
+                <div class="slide-content">
+                    <div class="topbar reveal">
+                        <h2 data-editable="true" contenteditable="true">路线图：从创作工具到个人创意系统</h2>
+                        <div class="micro">ROADMAP</div>
+                    </div>
+                    <div class="roadmap">
+                        <article class="road reveal delay-1"><div class="band"></div><div class="body"><h3 data-editable="true" contenteditable="true">Beta</h3><p data-editable="true" contenteditable="true">灵感扩写、文案生成、基础图片和多平台尺寸。</p></div></article>
+                        <article class="road reveal delay-2"><div class="band"></div><div class="body"><h3 data-editable="true" contenteditable="true">Brand</h3><p data-editable="true" contenteditable="true">品牌语气库、视觉参考库、团队共享模板。</p></div></article>
+                        <article class="road reveal delay-3"><div class="band"></div><div class="body"><h3 data-editable="true" contenteditable="true">Studio</h3><p data-editable="true" contenteditable="true">系列内容规划、批量资产生产、协作审阅流。</p></div></article>
+                        <article class="road reveal delay-4"><div class="band"></div><div class="body"><h3 data-editable="true" contenteditable="true">Agent</h3><p data-editable="true" contenteditable="true">主动发现热点、提出选题、生成发布周报。</p></div></article>
+                    </div>
+                    <div class="page-num">09 / 10</div>
+                </div>
+            </section>
+
+            <section class="slide closing">
+                <div class="ribbon"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span></div>
+                <div class="petals"><span class="petal red"></span><span class="petal pink"></span><span class="petal orange"></span><span class="petal green"></span><span class="petal blue"></span></div>
+                <div class="slide-content">
+                    <span class="stamp reveal">OPEN BETA</span>
+                    <h2 class="reveal delay-1" data-editable="true" contenteditable="true">给每个创作者一间永不熄灯的工作室</h2>
+                    <p class="reveal delay-2" style="position:absolute; left:84px; bottom:206px; width:760px;" data-editable="true" contenteditable="true">花火工坊 AI Creation Studio，今天开放内测申请。</p>
+                    <div class="seal reveal delay-3">创</div>
+                    <div class="page-num">10 / 10</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="deck-controls" aria-label="Presentation controls">
+        <button id="prevBtn" title="上一页">‹</button>
+        <span id="slideCounter">1 / 10</span>
+        <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar" style="width: 10%;"></div></div>
+        <button id="nextBtn" title="下一页">›</button>
+    </div>
+
+    <div class="edit-hotzone" title="编辑模式"></div>
+    <button class="edit-toggle show active" id="editToggle" title="编辑模式 E">E</button>
+    <button class="export-button show active" id="exportButton" title="导出当前 HTML">↓</button>
+
+    <script>
+        /* ===========================================
+           SLIDE PRESENTATION CONTROLLER
+           =========================================== */
+        class SlidePresentation {
+            constructor() {
+                this.slides = Array.from(document.querySelectorAll('.slide'));
+                this.currentSlide = 0;
+                this.stage = document.getElementById('deckStage');
+                this.counter = document.getElementById('slideCounter');
+                this.progressBar = document.getElementById('progressBar');
+                this.wheelLocked = false;
+                this.setupStageScale();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupMouseWheel();
+                this.setupButtons();
+                this.showSlide(0);
+            }
+
+            setupStageScale() {
+                const scale = () => {
+                    const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                    const x = (window.innerWidth - 1920 * factor) / 2;
+                    const y = (window.innerHeight - 1080 * factor) / 2;
+                    this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+                };
+                scale();
+                window.addEventListener('resize', scale);
+            }
+
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (event) => {
+                    if (event.target.getAttribute('contenteditable') === 'true') return;
+                    if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
+                        event.preventDefault();
+                        this.next();
+                    }
+                    if (['ArrowLeft', 'PageUp'].includes(event.key)) {
+                        event.preventDefault();
+                        this.prev();
+                    }
+                    if (event.key === 'Home') this.showSlide(0);
+                    if (event.key === 'End') this.showSlide(this.slides.length - 1);
+                });
+            }
+
+            setupTouchNav() {
+                let startX = 0;
+                let startY = 0;
+                window.addEventListener('touchstart', (event) => {
+                    startX = event.changedTouches[0].clientX;
+                    startY = event.changedTouches[0].clientY;
+                }, { passive: true });
+                window.addEventListener('touchend', (event) => {
+                    const dx = event.changedTouches[0].clientX - startX;
+                    const dy = event.changedTouches[0].clientY - startY;
+                    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
+                        dx < 0 ? this.next() : this.prev();
+                    }
+                }, { passive: true });
+            }
+
+            setupMouseWheel() {
+                window.addEventListener('wheel', (event) => {
+                    if (this.wheelLocked || Math.abs(event.deltaY) < 24) return;
+                    this.wheelLocked = true;
+                    event.deltaY > 0 ? this.next() : this.prev();
+                    setTimeout(() => { this.wheelLocked = false; }, 520);
+                }, { passive: true });
+            }
+
+            setupButtons() {
+                document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+                document.getElementById('nextBtn').addEventListener('click', () => this.next());
+            }
+
+            showSlide(index) {
+                this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+                this.slides.forEach((slide, slideIndex) => {
+                    const active = slideIndex === this.currentSlide;
+                    slide.classList.toggle('active', active);
+                    slide.classList.toggle('visible', active);
+                });
+                this.counter.textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+                this.progressBar.style.width = `${((this.currentSlide + 1) / this.slides.length) * 100}%`;
+            }
+
+            next() {
+                this.showSlide(this.currentSlide + 1);
+            }
+
+            prev() {
+                this.showSlide(this.currentSlide - 1);
+            }
+        }
+
+        /* ===========================================
+           INLINE EDITOR
+           =========================================== */
+        class InlineEditor {
+            constructor() {
+                this.isActive = false;
+                this.storageKey = `frontend-slides:${document.title}:editable-content`;
+                this.editables = Array.from(document.querySelectorAll('[data-editable="true"]'));
+                this.restore();
+                this.setupAutosave();
+                this.setupExport();
+            }
+
+            toggleEditMode() {
+                this.isActive = !this.isActive;
+                document.body.classList.toggle('editing', this.isActive);
+                document.getElementById('editToggle').classList.toggle('active', this.isActive);
+                document.getElementById('exportButton').classList.toggle('active', this.isActive);
+                this.editables.forEach((node) => node.setAttribute('contenteditable', this.isActive ? 'true' : 'false'));
+            }
+
+            setupAutosave() {
+                this.editables.forEach((node) => node.addEventListener('input', () => this.save()));
+            }
+
+            save() {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.editables.map((node) => node.innerHTML)));
+            }
+
+            restore() {
+                const saved = localStorage.getItem(this.storageKey);
+                if (!saved) return;
+                try {
+                    JSON.parse(saved).forEach((html, index) => {
+                        if (this.editables[index]) this.editables[index].innerHTML = html;
+                    });
+                } catch (error) {
+                    console.warn('Unable to restore saved edits', error);
+                }
+            }
+
+            setupExport() {
+                document.getElementById('exportButton').addEventListener('click', () => {
+                    this.save();
+                    const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'ai-creation-sakura-chroma-edited.html';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+        }
+
+        /* ===========================================
+           BOOTSTRAP
+           =========================================== */
+        const deck = new SlidePresentation();
+        const editor = new InlineEditor();
+
+        const hotzone = document.querySelector('.edit-hotzone');
+        const editToggle = document.getElementById('editToggle');
+        const exportButton = document.getElementById('exportButton');
+        let hideTimeout = null;
+
+        function showEditButtons() {
+            clearTimeout(hideTimeout);
+            editToggle.classList.add('show');
+            exportButton.classList.add('show');
+        }
+
+        function scheduleHideButtons() {
+            hideTimeout = setTimeout(() => {
+                if (!editor.isActive) {
+                    editToggle.classList.remove('show');
+                    exportButton.classList.remove('show');
+                }
+            }, 400);
+        }
+
+        hotzone.addEventListener('mouseenter', showEditButtons);
+        hotzone.addEventListener('mouseleave', scheduleHideButtons);
+        hotzone.addEventListener('click', () => editor.toggleEditMode());
+        editToggle.addEventListener('mouseenter', showEditButtons);
+        editToggle.addEventListener('mouseleave', scheduleHideButtons);
+        exportButton.addEventListener('mouseenter', showEditButtons);
+        exportButton.addEventListener('mouseleave', scheduleHideButtons);
+        editToggle.addEventListener('click', () => editor.toggleEditMode());
+
+        document.addEventListener('keydown', (event) => {
+            if ((event.key === 'e' || event.key === 'E') && event.target.getAttribute('contenteditable') !== 'true') {
+                editor.toggleEditMode();
+                showEditButtons();
+            }
+        });
+    </script>
+
+
+</body></html>
